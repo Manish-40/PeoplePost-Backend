@@ -31,7 +31,12 @@ authrouter.post("/signup", async (req, res) => {
         const token = await saveduser.getJWT();
 
         //add the token to cookie and send the response back to the user
-        res.cookie("token", token, { expires: new Date(Date.now() + 8 * 3600000), });
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,       // REQUIRED on Vercel
+            sameSite: "none",   // REQUIRED for cross-origin
+            expires: new Date(Date.now() + 8 * 3600000),
+        });
         res.json({ message: "user Added successfully", data: saveduser });
     }
     catch (err) {
@@ -57,7 +62,12 @@ authrouter.post("/login", async (req, res) => {
 
 
             //add the token to cookie and send the response back to the user
-            res.cookie("token", token, { expires: new Date(Date.now() + 8 * 3600000), });
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,       // REQUIRED on Vercel
+                sameSite: "none",   // REQUIRED for cross-origin
+                expires: new Date(Date.now() + 8 * 3600000),
+            });
             res.send(user);
         }
         else {
@@ -71,6 +81,9 @@ authrouter.post("/login", async (req, res) => {
 
 authrouter.post("/logout", async (req, res) => {
     res.cookie("token", null, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
         expires: new Date(Date.now()),
     });
     res.send("logout successful");
