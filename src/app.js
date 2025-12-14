@@ -6,12 +6,13 @@ const cors = require("cors");
 const http = require("http");
 const path =require("path");
 require('dotenv').config()
-app.options("*", cors());
+
 app.use(cors({
     origin: process.env.FRONTEND_ALLOWED_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 }));
+app.options("*", cors());
 app.use(express.json());
 app.use(cookieparser());
 
