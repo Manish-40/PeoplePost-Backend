@@ -9,6 +9,7 @@ require('dotenv').config()
 
 app.use(cors({
     origin: process.env.FRONTEND_ALLOWED_URL,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 }));
 app.use(express.json());
