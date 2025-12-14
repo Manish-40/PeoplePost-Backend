@@ -18,4 +18,15 @@ healthrouter.get("/health", async (req, res) => {
     });
 })
 
+healthrouter.get("/cors-check", (req, res) => {
+  res.json({
+    originAllowed: [
+      "http://localhost:5173",
+      "https://people-post-frontend-ltqa.vercel.app",
+    ],
+    time: new Date().toISOString(),
+  });
+});
+
+
 module.exports = healthrouter;
