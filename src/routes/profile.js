@@ -437,7 +437,7 @@ profilerouter.post("/upload", (req, res) => {
 
       return res.status(200).json({
         success: true,
-        imageUrl: result.secure_url, // ✅ USE THIS EVERYWHERE
+        url: result.secure_url, // ✅ USE THIS EVERYWHERE
         public_id: result.public_id,
       });
 
