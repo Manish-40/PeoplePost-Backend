@@ -149,17 +149,24 @@ profilerouter.post("/post", userauth, async (req, res) => {
   try {
     const { url, description } = req.body;
 
-    // If user provides nothing
-    if ((!url || url.trim() === "") && (!description || description.trim() === "")) {
+    // Only validate if url is provided and it's supposed to be an HTTP URL
+    if (url && url.length > 0 && !url.startsWith("http")) {
       return res.status(400).json({
         success: false,
-        message: "You must provide either an image or a description",
+        message: "Invalid image URL",
+      });
+    }
+
+    if (!url && !description) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot create an empty post",
       });
     }
 
     const newpost = await post.create({
-      url: url?.trim() || "",           // empty string if no URL
-      description: description?.trim() || "", 
+      url: url || "",          // optional
+      description: description || "", // optional
       author: req.user._id,
       name: req.user.firstname,
       photourl: req.user.photourl
@@ -167,10 +174,11 @@ profilerouter.post("/post", userauth, async (req, res) => {
 
     res.status(200).json(newpost);
   } catch (error) {
-    console.error(error);
+    console.error("POST ERROR:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
+
 
 
 
