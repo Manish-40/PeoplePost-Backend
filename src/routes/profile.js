@@ -4,7 +4,7 @@ const { validateeditprofiledata } = require("../utils/validation")
 const express = require("express");
 const profilerouter = express.Router();
 const post = require("../models/post")
-const upload = require("../middlewares/uploads");
+const cloudinary = require("../middlewares/uploads");
 const Postlikecomment = require("../models/comment")
 const Postlike = require("../models/like")
 const mongoose = require("mongoose");
@@ -49,24 +49,38 @@ profilerouter.get("/profile/view", userauth, async (req, res) => {
 //     }
 // })
 
+const storage = multer.memoryStorage();
+const uploadProfile = multer({ storage });
+
 profilerouter.patch(
   "/profile/edit",
   userauth,
-  upload.single("photo"), // use 'photo' — same field name from frontend FormData
+  uploadProfile.single("photo"), // photo from frontend FormData
   async (req, res) => {
     try {
       const loggedinuser = req.user;
 
-      // Update text fields from req.body
+      // Update text fields
       Object.keys(req.body).forEach((key) => {
         if (req.body[key] !== undefined && req.body[key] !== null) {
           loggedinuser[key] = req.body[key];
         }
       });
 
-      // If a new photo is uploaded, store its URL or path
+      // Upload photo to Cloudinary if provided
       if (req.file) {
-        loggedinuser.photourl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+        const result = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "profile_photos" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          streamifier.createReadStream(req.file.buffer).pipe(stream);
+        });
+
+        loggedinuser.photourl = result.secure_url;
       }
 
       await loggedinuser.save();
@@ -75,8 +89,7 @@ profilerouter.patch(
         message: `${loggedinuser.firstname}, your profile was updated successfully.`,
         data: loggedinuser,
       });
-    }
-    catch (error) {
+    } catch (error) {
       console.error("PROFILE EDIT ERROR:", error);
       res.status(500).json({
         message: "Profile update failed",
@@ -84,7 +97,6 @@ profilerouter.patch(
         stack: error.stack,
       });
     }
-
   }
 );
 
@@ -116,6 +128,12 @@ profilerouter.post("/search", userauth, async (req, res) => {
 profilerouter.post("/post", userauth, async (req, res) => {
   try {
     const { url, description } = req.body;
+    if (!url || !url.startsWith("http")) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or missing image URL",
+      });
+    }
 
     const newpost = await post.create({
       url,
