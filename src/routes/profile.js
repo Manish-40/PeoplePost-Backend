@@ -71,7 +71,7 @@ profilerouter.patch(
       if (req.file) {
         const result = await new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { folder: "profile_photos" },
+            { folder: "profile_photos",resource_type:"image" },
             (error, result) => {
               if (error) reject(error);
               else resolve(result);
