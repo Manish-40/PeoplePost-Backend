@@ -13,6 +13,7 @@ const { uploadCloudinary } = require("../middlewares/cloudinary.js");
 const { formatLinkedInTime, getMonth } = require("../utils/formatedDate.js");
 const educationSchema = require('../models/education.js');
 const experienceSchema = require('../models/experience.js')
+const streamifier=require("streamifier");
 
 
 profilerouter.get("/profile/view", userauth, async (req, res) => {
@@ -50,7 +51,17 @@ profilerouter.get("/profile/view", userauth, async (req, res) => {
 // })
 
 const storage = multer.memoryStorage();
-const uploadProfile = multer({ storage });
+const uploadProfile = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(file.originalname.toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) cb(null, true);
+    else cb(new Error("Only image files are allowed"));
+  },
+});
 
 profilerouter.patch(
   "/profile/edit",
@@ -70,6 +81,8 @@ profilerouter.patch(
       // Upload photo to Cloudinary if provided
       if (req.file) {
         const result = await new Promise((resolve, reject) => {
+          try
+          {
           const stream = cloudinary.uploader.upload_stream(
             { folder: "profile_photos",resource_type:"image" },
             (error, result) => {
@@ -77,8 +90,14 @@ profilerouter.patch(
               else resolve(result);
             }
           );
+        
           streamifier.createReadStream(req.file.buffer).pipe(stream);
-        });
+        }
+        catch(error)
+        {
+          reject(error);
+        }
+      });
 
         loggedinuser.photourl = result.secure_url;
       }
