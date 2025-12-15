@@ -14,7 +14,6 @@ const initializeSocket = (server) => {
             methods: ["GET", "POST"],
             credentials: true,
         }
-
     });
 
     io.on("connection", (socket) => {

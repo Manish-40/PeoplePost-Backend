@@ -8,7 +8,7 @@ const upload = require("../middlewares/uploads");
 const Postlikecomment = require("../models/comment")
 const Postlike = require("../models/like")
 const mongoose = require("mongoose");
-const { uploads } = require("../middlewares/multer");
+const { uploads } = require("../middlewares/multer.js");
 const { uploadCloudinary } = require("../middlewares/cloudinary.js");
 const { formatLinkedInTime, getMonth } = require("../utils/formatedDate.js");
 const educationSchema = require('../models/education.js');
@@ -75,9 +75,16 @@ profilerouter.patch(
         message: `${loggedinuser.firstname}, your profile was updated successfully.`,
         data: loggedinuser,
       });
-    } catch (error) {
-      res.status(400).send("error " + error.message);
     }
+    catch (error) {
+      console.error("PROFILE EDIT ERROR:", error);
+      res.status(500).json({
+        message: "Profile update failed",
+        error: error.message,
+        stack: error.stack,
+      });
+    }
+
   }
 );
 
@@ -406,25 +413,45 @@ profilerouter.get("/like/:postId", userauth, async (req, res) => {
   }
 });
 
-profilerouter.post("/upload", uploads.single('image'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, message: "No file provided" });
-  // console.log("req: ", req.file);
-  const localFilePath = req.file.path;
-  // console.log("localFilePath: ", localFilePath)
-  try {
-    const result = await uploadCloudinary(localFilePath);
-    // Send relevant response
-    return res.status(200).json({
-      success: true,
-      message: "File uploaded to Cloudinary",
-      public_id: result.public_id,
-      cloudinary_response: result, // you can remove if you want less data
-    });
-  } catch (err) {
-    console.error("Cloudinary upload error:", err);
-    return res.status(500).json({ success: false, message: "Upload failed", error: err.message });
-  }
-})
+
+profilerouter.post("/upload", (req, res) => {
+  uploads.single("image")(req, res, async (err) => {
+    try {
+      // 🔴 HANDLE MULTER ERRORS
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message,
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file provided",
+        });
+      }
+
+      // ✅ Upload to Cloudinary
+      const result = await uploadCloudinary(req.file.buffer);
+
+      return res.status(200).json({
+        success: true,
+        imageUrl: result.secure_url, // ✅ USE THIS EVERYWHERE
+        public_id: result.public_id,
+      });
+
+    } catch (error) {
+      console.error("UPLOAD ERROR:", error);
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  });
+});
+
+
 // profilerouter.get("/user/:username",userauth,async(req,res)=>{
 //   const {username}=req.params;
 //   try
@@ -450,21 +477,21 @@ profilerouter.get("/userview/:targetuserid", userauth, async (req, res) => {
   // console.log("targetuserid:", targetuserid);
 
   try {
-    const user = await User.findById(targetuserid).populate("viewedBy","firstname lastname");
+    const user = await User.findById(targetuserid).populate("viewedBy", "firstname lastname");
     const loggedInUser = await User.findById(loggedinuser);
     // if (user.viewedBy.includes(loggedinuser)) {
     //   return res.json({ view: user.userViewCount, message: "Already viewed" });
     // }
     const userViewedObj = {};
-    for(const userViewed of user.viewedBy) {
+    for (const userViewed of user.viewedBy) {
       userViewedObj[userViewed._id] = userViewed.firstname
     }
     userViewedObj[loggedinuser] = loggedInUser.firstname;
     user.viewedBy = (Object.keys(userViewedObj));
-    
+
     user.userViewCount = Object.keys(userViewedObj).length;
     await user.save();
-    res.status(200).json({message: "user viewed successfully."})
+    res.status(200).json({ message: "user viewed successfully." })
   }
   catch (error) {
     console.log(error);
@@ -544,10 +571,10 @@ profilerouter.post("/experience", userauth, async (req, res) => {
 profilerouter.get('/education', userauth, async (req, res) => {
   try {
     const loggedinuser = req.user?._id;
-    const response = await educationSchema.find({ user_id: loggedinuser }).sort({createdAt:-1});
-    for(const edu of response) {
-      edu.from  = getMonth(+(edu.from.split('-')[1])) + '-' + edu.from.split('-')[0];
-      edu.to  = getMonth(+(edu.to.split('-')[1])) + '-' + edu.to.split('-')[0];
+    const response = await educationSchema.find({ user_id: loggedinuser }).sort({ createdAt: -1 });
+    for (const edu of response) {
+      edu.from = getMonth(+(edu.from.split('-')[1])) + '-' + edu.from.split('-')[0];
+      edu.to = getMonth(+(edu.to.split('-')[1])) + '-' + edu.to.split('-')[0];
     }
     return res.status(200).json(response);
   } catch (error) {
@@ -565,10 +592,10 @@ profilerouter.get('/experience', userauth, async (req, res) => {
       .sort({ from: 1 })
       .lean();
 
-    for(const experience of experiences) {
-      experience.from  = getMonth(+(experience.from.split('-')[1])) + '-' + experience.from.split('-')[0];
-      if(experience.to !== 'Present') {
-        experience.to  = getMonth(+(experience.to.split('-')[1])) + '-' + experience.to.split('-')[0];
+    for (const experience of experiences) {
+      experience.from = getMonth(+(experience.from.split('-')[1])) + '-' + experience.from.split('-')[0];
+      if (experience.to !== 'Present') {
+        experience.to = getMonth(+(experience.to.split('-')[1])) + '-' + experience.to.split('-')[0];
       }
     }
     // Group by company like LinkedIn
@@ -624,31 +651,27 @@ profilerouter.patch("/education/:educationid", userauth, async (req, res) => {
   }
 });
 
-profilerouter.get("/education/:userId",userauth,async(req,res)=>{
-  try
-  {
-    const {userId}=req.params;
-    const edu=await educationSchema.find({user_id:userId})
+profilerouter.get("/education/:userId", userauth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const edu = await educationSchema.find({ user_id: userId })
     res.json(edu);
   }
-  catch(error)
-  {
+  catch (error) {
     console.log(error);
-    
+
   }
 })
 
-profilerouter.get("/experience/:userId",userauth,async(req,res)=>{
-  try
-  {
-    const {userId}=req.params;
-    const experience=await experienceSchema.find({user_id:userId})
+profilerouter.get("/experience/:userId", userauth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const experience = await experienceSchema.find({ user_id: userId })
     res.json(experience);
   }
-  catch(error)
-  {
+  catch (error) {
     console.log(error);
-    
+
   }
 })
 
