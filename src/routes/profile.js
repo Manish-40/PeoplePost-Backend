@@ -148,16 +148,18 @@ profilerouter.post("/search", userauth, async (req, res) => {
 profilerouter.post("/post", userauth, async (req, res) => {
   try {
     const { url, description } = req.body;
-    if (!url || !url.startsWith("http")) {
+
+    // If user provides nothing
+    if ((!url || url.trim() === "") && (!description || description.trim() === "")) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or missing image URL",
+        message: "You must provide either an image or a description",
       });
     }
 
     const newpost = await post.create({
-      url,
-      description,
+      url: url?.trim() || "",           // empty string if no URL
+      description: description?.trim() || "", 
       author: req.user._id,
       name: req.user.firstname,
       photourl: req.user.photourl
@@ -165,10 +167,11 @@ profilerouter.post("/post", userauth, async (req, res) => {
 
     res.status(200).json(newpost);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 });
+
 
 
 profilerouter.get("/post/feed", userauth, async (req, res) => {
