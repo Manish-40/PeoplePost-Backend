@@ -14,6 +14,7 @@ const { formatLinkedInTime, getMonth } = require("../utils/formatedDate.js");
 const educationSchema = require('../models/education.js');
 const experienceSchema = require('../models/experience.js')
 const streamifier=require("streamifier");
+const multer=require("multer")
 
 
 profilerouter.get("/profile/view", userauth, async (req, res) => {
