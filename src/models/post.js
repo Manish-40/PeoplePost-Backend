@@ -59,9 +59,9 @@ const postschema = new mongoose.Schema(
   {
     url: {
       type: String,
-      // required: true,
-      default:"",
+      default: "",
       validate(value) {
+        if (!value) return true; // ✅ allow text-only posts
         if (!validator.isURL(value, { require_protocol: true })) {
           throw new Error("Invalid post image URL: " + value);
         }
