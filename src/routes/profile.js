@@ -161,6 +161,10 @@ profilerouter.post("/post", userauth, async (req, res) => {
     }
 
     const cleanUrl = url?.trim() || "";
+    if (cleanUrl && !cleanUrl.startsWith("http")) {
+      return res.status(400).json({ message: "Invalid image URL" });
+    }
+
 
     const newpost = await post.create({
       url: cleanUrl,          // optional
