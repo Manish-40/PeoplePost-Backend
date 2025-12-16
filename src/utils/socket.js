@@ -55,16 +55,14 @@
 // module.exports = initializeSocket;
 
 
-const socket = require("socket.io");
-const crypto = require("crypto");
 const { Chat } = require("../models/chat");
+const crypto = require("crypto");
+const socket = require("socket.io");
 
-// Generate a unique room ID for a pair of users
 const getSecretRoomId = (userId, targetUserId) => {
-  return crypto
-    .createHash("sha256")
-    .update([userId, targetUserId].sort().join("_"))
-    .digest("hex");
+  return crypto.createHash("sha256")
+               .update([userId, targetUserId].sort().join("_"))
+               .digest("hex");
 };
 
 const initializeSocket = (server) => {
@@ -73,26 +71,21 @@ const initializeSocket = (server) => {
       origin: process.env.FRONTEND_ALLOWED_URL || "*",
       methods: ["GET", "POST"],
       credentials: true,
+      transports: ["polling"], // important for serverless
     },
   });
 
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
-    // Join a chat room
     socket.on("joinChat", ({ userId, targetUserId }) => {
-      if (!userId || !targetUserId) return;
-
       const roomId = getSecretRoomId(userId, targetUserId);
       socket.join(roomId);
       console.log(`User ${userId} joined room: ${roomId}`);
     });
 
-    // Send a chat message
     socket.on("sendMessage", async ({ userId, targetUserId, text, firstname, lastname }) => {
       try {
-        if (!text) return;
-
         const roomId = getSecretRoomId(userId, targetUserId);
 
         let chat = await Chat.findOne({
@@ -103,15 +96,13 @@ const initializeSocket = (server) => {
           chat = new Chat({ participants: [userId, targetUserId], messages: [] });
         }
 
-        // Save message to database
-        const messageData = { senderId: userId, text, createdAt: new Date() };
-        chat.messages.push(messageData);
+        const message = { senderId: userId, text, firstname, lastname, createdAt: new Date() };
+        chat.messages.push(message);
         await chat.save();
 
-        // Emit message to room with firstname/lastname from client
-        io.to(roomId).emit("messageReceived", { ...messageData, firstname, lastname });
-      } catch (error) {
-        console.error("SOCKET MESSAGE ERROR:", error);
+        io.to(roomId).emit("messageReceived", message);
+      } catch (err) {
+        console.error(err);
       }
     });
 
@@ -122,5 +113,3 @@ const initializeSocket = (server) => {
 };
 
 module.exports = initializeSocket;
-
-
