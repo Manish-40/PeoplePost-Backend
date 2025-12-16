@@ -60,6 +60,7 @@ const postschema = new mongoose.Schema(
     url: {
       type: String,
       // required: true,
+      default:"",
       validate(value) {
         if (!validator.isURL(value, { require_protocol: true })) {
           throw new Error("Invalid post image URL: " + value);

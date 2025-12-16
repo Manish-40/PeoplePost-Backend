@@ -13,8 +13,8 @@ const { uploadCloudinary } = require("../middlewares/cloudinary.js");
 const { formatLinkedInTime, getMonth } = require("../utils/formatedDate.js");
 const educationSchema = require('../models/education.js');
 const experienceSchema = require('../models/experience.js')
-const streamifier=require("streamifier");
-const multer=require("multer")
+const streamifier = require("streamifier");
+const multer = require("multer")
 
 
 profilerouter.get("/profile/view", userauth, async (req, res) => {
@@ -82,23 +82,21 @@ profilerouter.patch(
       // Upload photo to Cloudinary if provided
       if (req.file) {
         const result = await new Promise((resolve, reject) => {
-          try
-          {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "profile_photos",resource_type:"image" },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-        
-          streamifier.createReadStream(req.file.buffer).pipe(stream);
-        }
-        catch(error)
-        {
-          reject(error);
-        }
-      });
+          try {
+            const stream = cloudinary.uploader.upload_stream(
+              { folder: "profile_photos", resource_type: "image" },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            );
+
+            streamifier.createReadStream(req.file.buffer).pipe(stream);
+          }
+          catch (error) {
+            reject(error);
+          }
+        });
 
         loggedinuser.photourl = result.secure_url;
       }
@@ -150,12 +148,10 @@ profilerouter.post("/post", userauth, async (req, res) => {
     const { url, description } = req.body;
 
     // Only validate if url is provided and it's supposed to be an HTTP URL
-    if (url && url.length > 0 && !url.startsWith("http")) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid image URL",
-      });
+    if (typeof url === "string" && url.trim() !== "" && !url.startsWith("http")) {
+      return res.status(400).json({ message: "Invalid image URL" });
     }
+
 
     if (!url && !description) {
       return res.status(400).json({
@@ -164,8 +160,10 @@ profilerouter.post("/post", userauth, async (req, res) => {
       });
     }
 
+    const cleanUrl = url?.trim() || "";
+
     const newpost = await post.create({
-      url: url || "",          // optional
+      url: cleanUrl,          // optional
       description: description || "", // optional
       author: req.user._id,
       name: req.user.firstname,
