@@ -121,5 +121,5 @@ const initializeSocket = (server) => {
   });
 };
 
-module.exports.initializeSocket = initializeSocket;
+module.exports = initializeSocket;
 
