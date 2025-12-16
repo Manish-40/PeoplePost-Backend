@@ -55,10 +55,6 @@
 // module.exports = initializeSocket;
 
 
-const socket = require("socket.io");
-const crypto = require("crypto");
-const { Chat } = require("../models/chat");
-
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto
     .createHash("sha256")
@@ -83,7 +79,7 @@ const initializeSocket = (server) => {
 
       const roomId = getSecretRoomId(userId, targetUserId);
       socket.join(roomId);
-      console.log("Joined room:", roomId);
+      console.log(`User ${userId} joined room: ${roomId}`);
     });
 
     socket.on("sendMessage", async ({ userId, targetUserId, text }) => {
@@ -97,19 +93,20 @@ const initializeSocket = (server) => {
         });
 
         if (!chat) {
-          chat = new Chat({
-            participants: [userId, targetUserId],
-            messages: [],
-          });
+          chat = new Chat({ participants: [userId, targetUserId], messages: [] });
         }
+
+        const user = await User.findById(userId).select("firstname lastname");
 
         const message = {
           senderId: userId,
+          firstname: user.firstname,
+          lastname: user.lastname,
           text,
           createdAt: new Date(),
         };
 
-        chat.messages.push(message);
+        chat.messages.push({ senderId: userId, text, createdAt: new Date() });
         await chat.save();
 
         io.to(roomId).emit("messageReceived", message);
@@ -124,4 +121,5 @@ const initializeSocket = (server) => {
   });
 };
 
-module.exports = initializeSocket;
+module.exports.initializeSocket = initializeSocket;
+
