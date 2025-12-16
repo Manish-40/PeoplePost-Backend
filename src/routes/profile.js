@@ -145,41 +145,55 @@ profilerouter.post("/search", userauth, async (req, res) => {
 
 profilerouter.post("/post", userauth, async (req, res) => {
   try {
-    const { url, description } = req.body;
+    const { url = "", description = "" } = req.body;
 
-    // Only validate if url is provided and it's supposed to be an HTTP URL
-    if (typeof url === "string" && url.trim() !== "" && !url.startsWith("http")) {
-      return res.status(400).json({ message: "Invalid image URL" });
-    }
+    const cleanUrl = url.trim();
+    const cleanDescription = description.trim();
 
-
-    if (!url && !description) {
+    // ❌ Block completely empty post
+    if (!cleanUrl && !cleanDescription) {
       return res.status(400).json({
         success: false,
-        message: "Cannot create an empty post",
+        message: "Post must contain description or image",
       });
     }
 
-    const cleanUrl = url?.trim() || "";
+    // ❌ Validate URL only if provided
     if (cleanUrl && !cleanUrl.startsWith("http")) {
-      return res.status(400).json({ message: "Invalid image URL" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid image URL",
+      });
     }
 
-
     const newpost = await post.create({
-      url: cleanUrl,          // optional
-      description: description || "", // optional
+      url: cleanUrl,                  // "" allowed
+      description: cleanDescription,  // "" allowed
       author: req.user._id,
       name: req.user.firstname,
-      photourl: req.user.photourl
+      photourl: req.user.photourl,
     });
 
-    res.status(200).json(newpost);
+    return res.status(201).json(newpost);
+
   } catch (error) {
     console.error("POST ERROR:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+
+    // mongoose validation error
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 });
+
 
 
 
