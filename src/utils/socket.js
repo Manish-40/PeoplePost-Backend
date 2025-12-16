@@ -71,7 +71,7 @@ const initializeSocket = (server) => {
       origin: process.env.FRONTEND_ALLOWED_URL || "*",
       methods: ["GET", "POST"],
       credentials: true,
-      transports: ["polling"], // important for serverless
+      transports: ["websocket","polling"], // important for serverless
     },
   });
 
