@@ -55,6 +55,11 @@
 // module.exports = initializeSocket;
 
 
+const socket = require("socket.io");
+const crypto = require("crypto");
+const { Chat } = require("../models/chat");
+
+// Generate a unique room ID for a pair of users
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto
     .createHash("sha256")
@@ -74,6 +79,7 @@ const initializeSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
 
+    // Join a chat room
     socket.on("joinChat", ({ userId, targetUserId }) => {
       if (!userId || !targetUserId) return;
 
@@ -82,7 +88,8 @@ const initializeSocket = (server) => {
       console.log(`User ${userId} joined room: ${roomId}`);
     });
 
-    socket.on("sendMessage", async ({ userId, targetUserId, text }) => {
+    // Send a chat message
+    socket.on("sendMessage", async ({ userId, targetUserId, text, firstname, lastname }) => {
       try {
         if (!text) return;
 
@@ -96,20 +103,13 @@ const initializeSocket = (server) => {
           chat = new Chat({ participants: [userId, targetUserId], messages: [] });
         }
 
-        const user = await User.findById(userId).select("firstname lastname");
-
-        const message = {
-          senderId: userId,
-          firstname: user.firstname,
-          lastname: user.lastname,
-          text,
-          createdAt: new Date(),
-        };
-
-        chat.messages.push({ senderId: userId, text, createdAt: new Date() });
+        // Save message to database
+        const messageData = { senderId: userId, text, createdAt: new Date() };
+        chat.messages.push(messageData);
         await chat.save();
 
-        io.to(roomId).emit("messageReceived", message);
+        // Emit message to room with firstname/lastname from client
+        io.to(roomId).emit("messageReceived", { ...messageData, firstname, lastname });
       } catch (error) {
         console.error("SOCKET MESSAGE ERROR:", error);
       }
@@ -122,4 +122,5 @@ const initializeSocket = (server) => {
 };
 
 module.exports = initializeSocket;
+
 
