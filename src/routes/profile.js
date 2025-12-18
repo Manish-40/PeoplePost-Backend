@@ -740,5 +740,17 @@ profilerouter.get("/experience/:userId", userauth, async (req, res) => {
   }
 })
 
+profilerouter.delete("/post/:postid",userauth,async(req,res)=>{
+  try
+  {
+    const {postid}=req.params;
+    const response=await post.deleteOne({_id:postid});
+    res.json(response);
+  }
+  catch(error)
+  {
+    console.log(error);
+  }
+})
 
 module.exports = profilerouter;
