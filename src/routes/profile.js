@@ -753,4 +753,11 @@ profilerouter.delete("/post/:postid",userauth,async(req,res)=>{
   }
 })
 
+profilerouter.get("/api/me", userauth, (req, res) => {
+  if(!req.user) {
+    return res.status(401).json({ message: "Invalid user" });
+  }
+  res.status(201).json({ user: req.user });
+});
+
 module.exports = profilerouter;
