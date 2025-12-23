@@ -10,7 +10,7 @@ const Postlike = require("../models/like")
 const mongoose = require("mongoose");
 const { uploads } = require("../middlewares/multer.js");
 const { uploadCloudinary } = require("../middlewares/cloudinary.js");
-const { formatLinkedInTime, getMonth } = require("../utils/formatedDate.js");
+const { formatLinkedInTime, getMonth, getMonthNumber } = require("../utils/formatedDate.js");
 const educationSchema = require('../models/education.js');
 const experienceSchema = require('../models/experience.js')
 const streamifier = require("streamifier");
@@ -170,7 +170,8 @@ profilerouter.post("/post", userauth, async (req, res) => {
       url: cleanUrl,                  // "" allowed
       description: cleanDescription,  // "" allowed
       author: req.user._id,
-      name: req.user.firstname,
+      firstname: req.user.firstname,
+      lastname: req.user.lastname,
       photourl: req.user.photourl,
     });
 
@@ -638,8 +639,11 @@ profilerouter.get('/education', userauth, async (req, res) => {
     const loggedinuser = req.user?._id;
     const response = await educationSchema.find({ user_id: loggedinuser }).sort({ createdAt: -1 });
     for (const edu of response) {
+      console.log("FROM:", edu.from, "TO:", edu.to);
+
       edu.from = getMonth(+(edu.from.split('-')[1])) + '-' + edu.from.split('-')[0];
       edu.to = getMonth(+(edu.to.split('-')[1])) + '-' + edu.to.split('-')[0];
+
     }
     return res.status(200).json(response);
   } catch (error) {
@@ -697,7 +701,20 @@ profilerouter.get('/experience', userauth, async (req, res) => {
 profilerouter.patch("/experience/:experienceid", userauth, async (req, res) => {
   try {
     const { experienceid } = req.params;
-    const updatedExperience = await experienceSchema.findByIdAndUpdate(experienceid, req.body, { new: true }).lean();
+    let isReqFromMonth = req.body.from.split('-')[0], isReqToMonth = req.body.to.split('-')[0];
+    let formattedFromDate = '', formattedToDate = '';
+    const changeExperienceData = req.body;
+    if(isReqFromMonth.length === 3) {
+      isReqFromMonth = getMonthNumber(isReqFromMonth);
+      formattedFromDate = req.body.from.split('-')[1] + '-' + isReqFromMonth; 
+      changeExperienceData.from = formattedFromDate;
+    }
+    if(isReqToMonth.length === 3) {
+      isReqToMonth = getMonthNumber(isReqToMonth);
+      formattedToDate = req.body.to.split('-')[1] + '-' + isReqToMonth;
+      changeExperienceData.to = formattedToDate;
+    }
+    const updatedExperience = await experienceSchema.findByIdAndUpdate(experienceid, changeExperienceData, { new: true }).lean();
     res.status(200).json({ message: "experience added successfully.", updatedExperience })
   } catch (error) {
     console.log("error in experience: ", error);
@@ -708,7 +725,20 @@ profilerouter.patch("/experience/:experienceid", userauth, async (req, res) => {
 profilerouter.patch("/education/:educationid", userauth, async (req, res) => {
   try {
     const { educationid } = req.params;
-    const updatedEducation = await educationSchema.findByIdAndUpdate(educationid, req.body, { new: true }).lean();
+    let isReqFromMonth = req.body.from.split('-')[0], isReqToMonth = req.body.to.split('-')[0];
+    let formattedFromDate = '', formattedToDate = '';
+    const changeEducationData = req.body;
+    if(isReqFromMonth.length === 3) {
+      isReqFromMonth = getMonthNumber(isReqFromMonth);
+      formattedFromDate = req.body.from.split('-')[1] + '-' + isReqFromMonth; 
+      changeEducationData.from = formattedFromDate;
+    }
+    if(isReqToMonth.length === 3) {
+      isReqToMonth = getMonthNumber(isReqToMonth);
+      formattedToDate = req.body.to.split('-')[1] + '-' + isReqToMonth;
+      changeEducationData.to = formattedToDate;
+    }
+    const updatedEducation = await educationSchema.findByIdAndUpdate(educationid, changeEducationData, { new: true }).lean();
     res.status(200).json({ message: "education added successfully.", updatedEducation })
   } catch (error) {
     console.log("error in experience: ", error);
@@ -740,21 +770,19 @@ profilerouter.get("/experience/:userId", userauth, async (req, res) => {
   }
 })
 
-profilerouter.delete("/post/:postid",userauth,async(req,res)=>{
-  try
-  {
-    const {postid}=req.params;
-    const response=await post.deleteOne({_id:postid});
+profilerouter.delete("/post/:postid", userauth, async (req, res) => {
+  try {
+    const { postid } = req.params;
+    const response = await post.deleteOne({ _id: postid });
     res.json(response);
   }
-  catch(error)
-  {
+  catch (error) {
     console.log(error);
   }
 })
 
 profilerouter.get("/api/me", userauth, (req, res) => {
-  if(!req.user) {
+  if (!req.user) {
     return res.status(401).json({ message: "Invalid user" });
   }
   res.status(201).json({ user: req.user });

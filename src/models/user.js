@@ -65,7 +65,7 @@ const userschema = new mongoose.Schema({
     photourl: {
         type: String,
         default:
-            "https://openseauserdata.com/files/7f16cec1cc177a7e148067006e73c02a.png",
+            "http://peoplepost-default.png",
         validate(value) {
             if (!validator.isURL(value, { require_tld: false })) {
                 throw new Error("invalid url " + value);

@@ -84,9 +84,13 @@ const postschema = new mongoose.Schema(
       default: "posttoall",
     },
 
-    name: {
+    firstname: {
       type: String,
       required: true,
+    },
+    lastname:{
+      type:String,
+      required:true,
     },
 
     photourl: {

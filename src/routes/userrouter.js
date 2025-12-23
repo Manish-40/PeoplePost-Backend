@@ -95,13 +95,14 @@ userrouter.get("/feed", userauth, async (req, res) => {
     }
 })
 
-userrouter.get("/user/:username",userauth,async(req,res)=>{
-  const {username}=req.params;
+userrouter.get("/user/:userid",userauth,async(req,res)=>{
+  const {userid}=req.params;
   try
   {
-  const userclick=await User.findOne({firstname: username}).populate("viewedBy","firstname lastname")
+  const userclick=await User.findOne({_id:userid}).populate("viewedBy","firstname lastname")
   // .populate("firstname lastname photourl about age gender");
 //   console.log(userclick);
+console.log(userclick);
   res.json(userclick)
   }
   catch(error)
