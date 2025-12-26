@@ -12,7 +12,7 @@ const userauth=async(req,res,next)=>{
 
     const{_id}=decodedobj;
 
-    const user=await User.findById(_id);
+    const user=await User.findById(_id).populate("viewedBy","firstname lastname");
 
     if(!user)
     {

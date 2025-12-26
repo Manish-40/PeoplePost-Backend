@@ -21,6 +21,8 @@ profilerouter.get("/profile/view", userauth, async (req, res) => {
   try {
     const user = req.user;
     res.send(user);
+    console.log("user",user);
+    
   }
   catch (error) {
     res.status(400).send("error" + error.message);
