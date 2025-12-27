@@ -3,13 +3,14 @@ const { Chat } = require("../models/chat");
 const { userauth } = require("../middlewares/auth");
 const { find } = require("../models/user");
 const { Group } = require("../models/group.chat");
+const { formatChatTime } = require("../utils/formatedDate");
 
 const chatRouter = express.Router();
 
 // chatRouter.get("/chat/:targetUserId", userauth, async (req, res) => {
 //     const { targetUserId } = req.params;
 //     // console.log("targetUserId:",targetUserId);
-    
+
 //     const userId = req.user._id;
 //     try {
 //         let chat = await Chat.findOne({
@@ -33,26 +34,36 @@ const chatRouter = express.Router();
 //     }
 // });
 chatRouter.get("/chat/:targetUserId", userauth, async (req, res) => {
-  try {
-    const { targetUserId } = req.params;
-    const userId = req.user._id;
+    try {
+        const { targetUserId } = req.params;
+        const userId = req.user._id;
 
-    let chat = await Chat.findOne({
-      participants: { $all: [userId, targetUserId] },
-    }).populate("messages.senderId", "firstname lastname");
+        let chat = await Chat.findOne({
+            participants: { $all: [userId, targetUserId] },
+        }).populate("messages.senderId", "firstname lastname");
+        console.log("chat data", chat);
 
-    if (!chat) {
-      chat = await Chat.create({
-        participants: [userId, targetUserId],
-        messages: [],
-      });
+        if (!chat) {
+            chat = await Chat.create({
+                participants: [userId, targetUserId],
+                messages: [],
+            });
+        }
+        chat=chat.toObject();
+        chat.messages=chat.messages.map((e)=>({
+            // const obj=e.toObject();
+            // obj.formattedTime = formatChatTime(.createdAt); 
+            // return obj;
+            ...e,
+            createdAt:formatChatTime(e.createdAt)
+        }))
+
+        console.log(chat.messages[0].createdAt);
+        res.status(200).json(chat);
+    } catch (error) {
+        console.error("CHAT FETCH ERROR:", error);
+        res.status(500).json({ message: "Failed to fetch chat" });
     }
-
-    res.status(200).json(chat);
-  } catch (error) {
-    console.error("CHAT FETCH ERROR:", error);
-    res.status(500).json({ message: "Failed to fetch chat" });
-  }
 });
 
 chatRouter.post("/group", userauth, async (req, res) => {

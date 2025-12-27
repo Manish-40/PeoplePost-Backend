@@ -72,5 +72,37 @@ export function getMonthNumber(monthName) {
   }
 }
 
+export const formatChatTime = (createdAt) => {
+  const date = new Date(createdAt);
+  const now = new Date();
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (isToday) return time;                 // 3:45 PM
+  if (isYesterday) return `Yesterday ${time}`; // Yesterday 3:45 PM
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }) + ` ${time}`; // 12 Oct 2025 3:45 PM
+};
+
 // Example:
 //console.log(formatLinkedInTime("2025-11-29T14:02:54.105Z"));
