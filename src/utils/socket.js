@@ -75,10 +75,11 @@ const initializeSocket = (server) => {
       transports: ["websocket", "polling"], // important for serverless
     },
   });
-
+const date=new Date().toString();
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
-
+    console.log("server time",date);
+    
     socket.on("joinChat", ({ userId, targetUserId }) => {
       const roomId = getSecretRoomId(userId, targetUserId);
       socket.join(roomId);

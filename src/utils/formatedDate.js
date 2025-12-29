@@ -22,7 +22,7 @@ export function formatLinkedInTime(dateString) {
 
 export function getMonth(monthNumber) {
   console.log("monthNumber: ", monthNumber)
-  switch(monthNumber) {
+  switch (monthNumber) {
     case 1:
       return 'Jan';
     case 2:
@@ -50,11 +50,11 @@ export function getMonth(monthNumber) {
     default:
       throw new Error('Invalid Month Number.')
   }
-  
+
 }
 
 export function getMonthNumber(monthName) {
-  switch(monthName) {
+  switch (monthName) {
     case 'Jan': return '01';
     case 'Feb': return '02';
     case 'Mar': return '03';
@@ -74,35 +74,45 @@ export function getMonthNumber(monthName) {
 
 export const formatChatTime = (createdAt) => {
   const date = new Date(createdAt);
-  const now = new Date();
 
-  const isToday =
-    date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
-
-  const yesterday = new Date();
-  yesterday.setDate(now.getDate() - 1);
-
-  const isYesterday =
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear();
-
-  const time = date.toLocaleTimeString([], {
+  const time = date.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Kolkata", // ✅ FIX
   });
 
-  if (isToday) return time;                 // 3:45 PM
-  if (isYesterday) return `Yesterday ${time}`; // Yesterday 3:45 PM
+  const now = new Date();
 
-  return date.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }) + ` ${time}`; // 12 Oct 2025 3:45 PM
+  const nowIST = new Date(
+    now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+
+  const dateIST = new Date(
+    date.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  );
+
+  const isToday =
+    dateIST.toDateString() === nowIST.toDateString();
+
+  const yesterday = new Date(nowIST);
+  yesterday.setDate(nowIST.getDate() - 1);
+
+  const isYesterday =
+    dateIST.toDateString() === yesterday.toDateString();
+
+  if (isToday) return time;
+  if (isYesterday) return `Yesterday ${time}`;
+
+  return (
+    dateIST.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Kolkata",
+    }) + ` ${time}`
+  );
 };
+
 
 // Example:
 //console.log(formatLinkedInTime("2025-11-29T14:02:54.105Z"));
