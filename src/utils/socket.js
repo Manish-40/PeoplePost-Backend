@@ -58,11 +58,12 @@
 const { Chat } = require("../models/chat");
 const crypto = require("crypto");
 const socket = require("socket.io");
+const { formatChatTime } = require("./formatedDate");
 
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto.createHash("sha256")
-               .update([userId, targetUserId].sort().join("_"))
-               .digest("hex");
+    .update([userId, targetUserId].sort().join("_"))
+    .digest("hex");
 };
 
 const initializeSocket = (server) => {
@@ -71,7 +72,7 @@ const initializeSocket = (server) => {
       origin: process.env.FRONTEND_ALLOWED_URL || "*",
       methods: ["GET", "POST"],
       credentials: true,
-      transports: ["websocket","polling"], // important for serverless
+      transports: ["websocket", "polling"], // important for serverless
     },
   });
 
@@ -99,8 +100,13 @@ const initializeSocket = (server) => {
         const message = { senderId: userId, text, firstname, lastname, createdAt: new Date() };
         chat.messages.push(message);
         await chat.save();
-
-        io.to(roomId).emit("messageReceived", message);
+        const createdAt = formatChatTime(message.createdAt);
+        io.to(roomId).emit("messageReceived", {
+        firstname,
+        lastname,
+        text,
+        createdAt: createdAt, // ✅ FORMATTED
+      });
       } catch (err) {
         console.error(err);
       }
