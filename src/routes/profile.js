@@ -389,7 +389,7 @@ profilerouter.get("/comment/:postId", userauth, async (req, res) => {
   try {
     const comments = await Postlikecomment.find({ post: req.params.postId }).populate(
       "user",
-      "firstname photourl"
+      "firstname lastname photourl"
     ).lean();
     const result = comments.map((item) => {
       return { ...item, createdAt: formatLinkedInTime(item.createdAt) }
