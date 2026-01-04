@@ -87,6 +87,13 @@ const userschema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"user"
     }],
+    isOnline:{
+        type:Boolean,
+        default:false,
+    },
+    lastSeen:{
+        type:String,
+    }
 }, {
     timestamps: true
 });

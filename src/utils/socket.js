@@ -59,6 +59,7 @@ const { Chat } = require("../models/chat");
 const crypto = require("crypto");
 const socket = require("socket.io");
 const { formatChatTime } = require("./formatedDate");
+const User=require("../models/user");
 
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto.createHash("sha256")
@@ -79,7 +80,11 @@ const date=new Date().toString();
   io.on("connection", (socket) => {
     console.log("Socket connected:", socket.id);
     console.log("server time",date);
-    
+    socket.on("registerUser",async (_id)=>{
+      socket.userId=_id;
+      await User.findByIdAndUpdate(_id,{isOnline:true});
+      socket.broadcast.emit("userStatus",{userId:_id,isOnline:true})
+    })
     socket.on("joinChat", ({ userId, targetUserId }) => {
       const roomId = getSecretRoomId(userId, targetUserId);
       socket.join(roomId);
@@ -98,7 +103,7 @@ const date=new Date().toString();
           chat = new Chat({ participants: [userId, targetUserId], messages: [] });
         }
 
-        const message = { senderId: userId, text, firstname, lastname, createdAt: new Date() };
+        const message = { senderId: userId, text, firstname, lastname, createdAt: new Date()};
         chat.messages.push(message);
         await chat.save();
         const createdAt = formatChatTime(message.createdAt);
@@ -113,8 +118,18 @@ const date=new Date().toString();
       }
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async() => {
       console.log("Socket disconnected:", socket.id);
+      if(socket.userId)
+      {
+        const lastSeen=new Date();
+        // const lastSeen=formatChatTime(lastseen);
+        await User.findByIdAndUpdate(socket.userId,{
+          isOnline:false,
+          lastSeen,
+        });
+        socket.broadcast.emit("userStatus",{userId:socket.userId,isOnline:false,lastSeen});
+      }
     });
   });
 };

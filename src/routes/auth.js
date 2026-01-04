@@ -12,7 +12,6 @@ authrouter.post("/signup", async (req, res) => {
         validatesignupdata(req);
 
         const { firstname, lastname, emailid, password, } = req.body;
-
         //encrypt the password
         const passwordhash = await bcrypt.hash(password, 10);
         console.log(passwordhash);
