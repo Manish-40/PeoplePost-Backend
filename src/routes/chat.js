@@ -4,7 +4,7 @@ const { userauth } = require("../middlewares/auth");
 const { find } = require("../models/user");
 const { Group } = require("../models/group.chat");
 const { formatChatTime } = require("../utils/formatedDate");
-const  User  = require("../models/user");
+const User = require("../models/user");
 
 const chatRouter = express.Router();
 
@@ -50,7 +50,7 @@ chatRouter.get("/chat/:targetUserId", userauth, async (req, res) => {
                 messages: [],
             });
         }
-        const targetUser = await User.findById(targetUserId).select("firstname lastname isOnline lastSeen photourl");
+        // const targetUser = await User.findById(targetUserId).select("firstname lastname isOnline lastSeen photourl");
         chat = chat.toObject();
         chat.messages = chat.messages.map((e) => ({
             // const obj=e.toObject();
@@ -59,22 +59,40 @@ chatRouter.get("/chat/:targetUserId", userauth, async (req, res) => {
             ...e,
             createdAt: formatChatTime(e.createdAt)
         }))
-        chat.targetUser = {
-            _id: targetUser._id,
-            firstname: targetUser.firstname,
-            lastname: targetUser.lastname,
-            isOnline: targetUser.isOnline,
-            lastSeen: targetUser.lastSeen,
-            photourl:targetUser.photourl,
-        };
-        console.log(chat.messages[0].createdAt);
+        // chat.targetUser = {
+        //     _id: targetUser._id,
+        //     firstname: targetUser.firstname,
+        //     lastname: targetUser.lastname,
+        //     isOnline: targetUser.isOnline,
+        //     lastSeen: targetUser.lastSeen,
+        //     photourl:targetUser.photourl,
+        // };
+        // console.log(chat.messages[0].createdAt);
         res.status(200).json(chat);
     } catch (error) {
         console.error("CHAT FETCH ERROR:", error);
         res.status(500).json({ message: "Failed to fetch chat" });
     }
 });
+chatRouter.get("/user/:targetUserId", userauth, async (req, res) => {
+    const { targetUserId } = req.params;
+    if (!targetUserId) {
+        return res.status(400).json({ message: "User ID required" });
+    }
 
+    const user = await User.findById(targetUserId).select("firstname lastname photourl lastSeen isOnline");
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({
+        _id: user._id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        photourl: user.photourl,
+        isOnline: user.isOnline,
+        lastSeen: user.lastSeen,
+    });
+})
 chatRouter.post("/group", userauth, async (req, res) => {
     const { targetUserIds, groupName } = req.body;
     const userId = req.user._id;
