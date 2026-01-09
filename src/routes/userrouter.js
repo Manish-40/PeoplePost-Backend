@@ -99,7 +99,7 @@ userrouter.get("/user/:userid",userauth,async(req,res)=>{
   const {userid}=req.params;
   try
   {
-  const userclick=await User.findOne({_id:userid}).populate("viewedBy","firstname lastname")
+  const userclick=await User.findOne({_id:userid}).populate("viewedBy","firstname lastname photourl")
   // .populate("firstname lastname photourl about age gender");
 //   console.log(userclick);
 console.log(userclick);
