@@ -88,4 +88,23 @@ authrouter.post("/logout", async (req, res) => {
     res.send("logout successful");
 });
 
+authrouter.patch("/user/forgotPassword", async (req, res) => {
+    try {
+        const { emailid, newPassword } = req.body;
+
+        // 1. Validation
+        if (!emailid || !newPassword) {
+            return res.status(400).json({ message: "Email and new password are required" });
+        }
+        //encrypt the password
+        const newpasswordhash = await bcrypt.hash(newPassword, 10);
+        console.log(newpasswordhash);
+        const data = await User.findOneAndUpdate({ emailid }, { password: newpasswordhash }, { new: true });
+        res.status(200).json(data);
+    }
+    catch (error) {
+        console.log(error);
+    }
+})
+
 module.exports = authrouter;
