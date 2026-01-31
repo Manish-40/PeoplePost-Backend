@@ -1,6 +1,7 @@
 const { validatesignupdata } = require("../utils/validation");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const validator =require("validator");
 
 const express = require("express");
 
@@ -93,13 +94,35 @@ authrouter.patch("/user/forgotPassword", async (req, res) => {
         const { emailid, newPassword } = req.body;
 
         // 1. Validation
-        if (!emailid || !newPassword) {
+        if (!emailid && !newPassword) {
             return res.status(400).json({ message: "Email and new password are required" });
         }
+        if(!emailid)
+        {
+            return res.status(400).json({message:"Email is required"});
+        }
+        if(!newPassword)
+        {
+            return res.status(400).json({message:"Password is required"});
+        }
+        
+
+        if (!validator.isStrongPassword(newPassword)) {
+            return res.status(400).json({
+                message: "Password must be strong (uppercase, lowercase, number, symbol)"
+            });
+        }
+
         //encrypt the password
         const newpasswordhash = await bcrypt.hash(newPassword, 10);
         console.log(newpasswordhash);
         const data = await User.findOneAndUpdate({ emailid }, { password: newpasswordhash }, { new: true });
+        // 4. User not found
+        if (!data) {
+            return res.status(404).json({
+                message: "User with this email does not exist"
+            });
+        }
         res.status(200).json(data);
     }
     catch (error) {
