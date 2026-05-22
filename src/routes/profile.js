@@ -271,6 +271,7 @@ profilerouter.get("/post/user", userauth, async (req, res) => {
         data: []
       });
     }
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -560,6 +561,8 @@ profilerouter.get("/userview/:targetuserid", userauth, async (req, res) => {
     user.userViewCount = Object.keys(userViewedObj).length;
     await user.save();
     res.status(200).json({ message: "user viewed successfully." })
+    console.log("1userpostview",user);
+    
   }
   catch (error) {
     console.log(error);
@@ -577,10 +580,11 @@ profilerouter.get("/userpostview/:targetpostid", userauth, async (req, res) => {
   // console.log("targetpostid:", targetpostid);
 
   try {
-    const userpost = await post.findById(targetpostid);
+    const userpost = await post.findById(targetpostid).populate("author","firstname photourl");
     if (userpost.viewedBy.includes(loggedinuser)) {
       return res.json({ view: userpost.userPostViewCount, message: "Already post Viewed" })
     }
+    console.log("userpostview",userpost);
     userpost.viewedBy.push(loggedinuser);
     userpost.userPostViewCount += 1;
     await userpost.save();

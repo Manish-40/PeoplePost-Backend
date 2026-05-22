@@ -1,0 +1,2 @@
+mongodb compass connection string: origcluster0.wok90lt.mongodb.net/devtinder
+mongodb atlas: cluster name : dev tinder click connect then go to mongodb compass then connect that cluster
