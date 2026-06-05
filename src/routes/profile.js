@@ -21,8 +21,8 @@ profilerouter.get("/profile/view", userauth, async (req, res) => {
   try {
     const user = req.user;
     res.send(user);
-    console.log("user",user);
-    
+    console.log("user", user);
+
   }
   catch (error) {
     res.status(400).send("error" + error.message);
@@ -560,8 +560,8 @@ profilerouter.get("/userview/:targetuserid", userauth, async (req, res) => {
     user.userViewCount = Object.keys(userViewedObj).length;
     await user.save();
     res.status(200).json({ message: "user viewed successfully." })
-    console.log("1userpostview",user);
-    
+    console.log("1userpostview", user);
+
   }
   catch (error) {
     console.log(error);
@@ -579,11 +579,11 @@ profilerouter.get("/userpostview/:targetpostid", userauth, async (req, res) => {
   // console.log("targetpostid:", targetpostid);
 
   try {
-    const userpost = await post.findById(targetpostid).populate("author","firstname photourl");
+    const userpost = await post.findById(targetpostid).populate("author", "firstname photourl");
     if (userpost.viewedBy.includes(loggedinuser)) {
       return res.json({ view: userpost.userPostViewCount, message: "Already post Viewed" })
     }
-    console.log("userpostview",userpost);
+    console.log("userpostview", userpost);
     userpost.viewedBy.push(loggedinuser);
     userpost.userPostViewCount += 1;
     await userpost.save();
@@ -709,12 +709,12 @@ profilerouter.patch("/experience/:experienceid", userauth, async (req, res) => {
     let isReqFromMonth = req.body.from.split('-')[0], isReqToMonth = req.body.to.split('-')[0];
     let formattedFromDate = '', formattedToDate = '';
     const changeExperienceData = req.body;
-    if(isReqFromMonth.length === 3) {
+    if (isReqFromMonth.length === 3) {
       isReqFromMonth = getMonthNumber(isReqFromMonth);
-      formattedFromDate = req.body.from.split('-')[1] + '-' + isReqFromMonth; 
+      formattedFromDate = req.body.from.split('-')[1] + '-' + isReqFromMonth;
       changeExperienceData.from = formattedFromDate;
     }
-    if(isReqToMonth.length === 3) {
+    if (isReqToMonth.length === 3) {
       isReqToMonth = getMonthNumber(isReqToMonth);
       formattedToDate = req.body.to.split('-')[1] + '-' + isReqToMonth;
       changeExperienceData.to = formattedToDate;
@@ -733,12 +733,12 @@ profilerouter.patch("/education/:educationid", userauth, async (req, res) => {
     let isReqFromMonth = req.body.from.split('-')[0], isReqToMonth = req.body.to.split('-')[0];
     let formattedFromDate = '', formattedToDate = '';
     const changeEducationData = req.body;
-    if(isReqFromMonth.length === 3) {
+    if (isReqFromMonth.length === 3) {
       isReqFromMonth = getMonthNumber(isReqFromMonth);
-      formattedFromDate = req.body.from.split('-')[1] + '-' + isReqFromMonth; 
+      formattedFromDate = req.body.from.split('-')[1] + '-' + isReqFromMonth;
       changeEducationData.from = formattedFromDate;
     }
-    if(isReqToMonth.length === 3) {
+    if (isReqToMonth.length === 3) {
       isReqToMonth = getMonthNumber(isReqToMonth);
       formattedToDate = req.body.to.split('-')[1] + '-' + isReqToMonth;
       changeEducationData.to = formattedToDate;
@@ -793,4 +793,31 @@ profilerouter.get("/api/me", userauth, (req, res) => {
   res.status(201).json({ user: req.user });
 });
 
+
+profilerouter.get("/search/user", userauth, async (req, res) => {
+  try {
+    const { firstname } = req.query;
+    if (!firstname || firstname.trim() === "") {
+      return res.status(400).json({
+        message: "No user found"
+      });
+    }
+    const response = await User.find({
+      firstname: {
+        $regex: `^${firstname}`,
+        $options: "i"
+      },
+    })
+    if (response.length === 0) {
+      return res.status(404).json({
+        message: "No user found"
+      });
+    }
+    res.send(response);
+  }
+  catch (error) {
+      console.log(error);
+      res.status(500).send("No user found");
+    }
+  });
 module.exports = profilerouter;
